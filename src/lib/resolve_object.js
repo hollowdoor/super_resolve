@@ -4,42 +4,46 @@ import normalValue from './normal_value.js';
 import resolveArray from './resolve_array.js';
 import objectKeys from 'object-keys';
 import forEach from 'array-foreach';
+import resolveAll from './resolve_all.js';
 
-export default function resolveObject(object, Promise, visited){
-    return resolveProperties(object, Promise, visited);
+export default function resolveObject(object, the){
+    return resolveProperties(object, the);
 }
 
-function resolveProperties(object, Promise, visited){
+function resolveProperties(object, the){
     let resolutions = [];
     let dest = {};
 
-    visited.push(object);
+    the.visited.push(object);
 
     forEach(objectKeys(object), name=>{
-
-    //Object.keys(object).forEach(name=>{
 
         if(normalValue(object[name])){ return; }
 
         if(isThenable(object[name])){
             resolutions.push(
                 resolveProp(object[name], name)
+                .then(prop=>{
+                    return resolveProp(
+                        resolveAll(prop.value, the), prop.name
+                    );
+                })
             );
         }else if(isArray(object[name])){
             resolutions.push(
                 resolveProp(
-                    resolveArray(object[name], APromise, visited), name
+                    resolveArray(object[name], the), name
                 )
             );
         }else if(typeof object[name] === 'object'){
 
-            for(let i=0; i<visited.length; i++){
-                if(visited[i] === object[name]){
+            for(let i=0; i<the.visited.length; i++){
+                if(the.visited[i] === object[name]){
                     return;
                 }
             }
 
-            visited.push(object[name]);
+            the.visited.push(object[name]);
 
             resolutions.push(
                 resolveChild(object[name], name)
@@ -48,7 +52,7 @@ function resolveProperties(object, Promise, visited){
     });
 
     function resolveChild(obj, name){
-        return resolveObject(obj, Promise, visited).then(value=>{
+        return resolveObject(obj, the).then(value=>{
             return {
                 name: name,
                 value: value
@@ -56,7 +60,7 @@ function resolveProperties(object, Promise, visited){
         });
     }
 
-    return Promise.all(resolutions)
+    return the.Promise.all(resolutions)
     .then(values=>{
 
         for(let i=0; i<values.length; i++){

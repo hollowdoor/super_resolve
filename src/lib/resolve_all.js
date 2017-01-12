@@ -4,25 +4,25 @@ import isThenable from './is_thenable.js';
 import resolveArray from './resolve_array.js';
 import isArray from 'is-array';
 
-export default function resolveAll(value, Promise, visited){
+export default function resolveAll(value, the){
 
     const type = typeof value;
 
     if(type === 'undefined'){
-        return Promise.reject(new TypeError('undefined value'));
+        return the.Promise.reject(new TypeError('undefined value'));
     }
 
     if(isThenable(value)){
-        return value.then(v=>resolveAll(v, Promise, visited));
+        return value.then(v=>resolveAll(v, the));
     }
 
     if(normalValue(value)){
-        return Promise.resolve(value);
+        return the.Promise.resolve(value);
     }
 
     if(isArray(value)){
-        return resolveArray(value, Promise, visited);
+        return resolveArray(value, the);
     }
 
-    return resolveObject(value, Promise, visited);
+    return resolveObject(value, the);
 }

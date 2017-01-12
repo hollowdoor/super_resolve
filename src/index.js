@@ -1,10 +1,21 @@
 import resolveAll from './lib/resolve_all.js';
 export default function superResolve(value, P){
+    
+    if(typeof P === 'undefined'){
+        if(superResolve.Promise !== null){
+            P = superResolve.Promise;
+        }else{
+            P = Promise;
+        }
+    }
+
     return resolveAll(
         value,
-        P || superResolve.promise || Promise,
-        []
+        {
+            Promise: P,
+            visited: []
+        }
     );
 }
 
-superResolve.promise = null;
+superResolve.Promise = null;

@@ -90,7 +90,7 @@ I like it when values just look like values don't you?
 
 For some usages this library could be overkill. When you want to grab data from a lot of different data sources in a very tight time interval this library could be very useful.
 
-Note that some values might not work correctly. The type checking mechanism has been tuned to work with almost all possible javascript types. Some native types might trip up `super-resolve`. Typically you won't have to worry about this since most data returned from a promise will be JSON compatible. As long as your data conforms to JSON then `super-resolve` should work fine.
+Note that some values might not work correctly. The type checking mechanism in `super-resolve` has been tuned to work with almost all possible javascript types. Some native types might trip up `super-resolve`. Typically you won't have to worry about this since most data returned from a promise will be JSON compatible.
 
 The best possible values to pass to `super-resolve`:
 
@@ -117,11 +117,11 @@ The `value` parameter can be any value except undefined. What ever you pass to `
 
 ### superResolve.promise
 
-`superResolve.promise` is a static property that equals null. Set this to a promise constructor to changed the custom promise implementation instead of using the `PromiseConstructor` parameter of `superResolve()`.
+`superResolve.promise` is a static property that equals null. Set this to a promise constructor to change the custom promise implementation instead of using the `PromiseConstructor` parameter of `superResolve()`.
 
 Why?
 ----
 
-Someone probably would have made it anyway. Several months before the first code was written for `super-resolve` I was planning on making something like it. I can predict some usages for this library. As a parameter consumer for other libraries, or as a helper for complex applications that are data heavy. Both are things I plan to use it for.
+Someone probably would have made it anyway. Several months before the first code was written for `super-resolve` I was planning on making making something like it. I can predict some usages for this library. As a parameter consumer for other libraries, or as a helper for complex applications that are data heavy. Both are things I plan to use it for.
 
 Happy coding!

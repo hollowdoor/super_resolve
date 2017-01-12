@@ -7,8 +7,15 @@ function isThenable(value){
     return typeof value === 'object' && typeof value['then'] === 'function';
 }
 
+var g = (function (){
+    if(typeof global !== 'undefined'){
+        return global;
+    }else if(typeof window !== 'undefined'){
+        return window;
+    }
+})();
 //https://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/
-var toType = (function (_global, doc, alert){
+var toType = (function (_global, doc, alert, proc){
     return function _toType(obj) {
         if(_global === obj){
             return 'global';
@@ -16,14 +23,21 @@ var toType = (function (_global, doc, alert){
             return 'document';
         }else if(obj === alert){
             return 'alert';
+        }else if(proc && obj === proc){
+            return 'process'
+        }
+
+        if(typeof obj === 'object' && obj.nodeType){
+            return 'node';
         }
 
         return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
     };
 })(
-    (window || global || undefined),
-    (document || null),
-    (alert || null)
+    g,
+    (g.document ? document : null),
+    (g.alert ? alert : null),
+    (g.process ? process : null)
 );
 
 var regularTypes = [
@@ -31,7 +45,8 @@ var regularTypes = [
 ];
 
 var otherTypes = [
-    'error', 'date', 'regexp', 'json', 'math'
+    'error', 'date', 'regexp', 'json', 'math',
+    'global', 'document', 'alert', 'node', 'process'
 ];
 
 
@@ -57,47 +72,50 @@ function isNormalValue(value){
     return false;
 }
 
-function resolveArray(arr, Promise, visited){
-    return Promise.all(arrayMap(arr, function (value){
-        return resolveAll(value, Promise, visited);
+function resolveArray(arr, the){
+    return the.Promise.all(arrayMap(arr, function (value){
+        return resolveAll(value, the);
     }));
 }
 
-function resolveObject(object, Promise, visited){
-    return resolveProperties(object, Promise, visited);
+function resolveObject(object, the){
+    return resolveProperties(object, the);
 }
 
-function resolveProperties(object, Promise, visited){
+function resolveProperties(object, the){
     var resolutions = [];
     var dest = {};
 
-    visited.push(object);
+    the.visited.push(object);
 
     forEach(objectKeys(object), function (name){
-
-    //Object.keys(object).forEach(name=>{
 
         if(isNormalValue(object[name])){ return; }
 
         if(isThenable(object[name])){
             resolutions.push(
                 resolveProp(object[name], name)
+                .then(function (prop){
+                    return resolveProp(
+                        resolveAll(prop.value, the), prop.name
+                    );
+                })
             );
         }else if(isArray(object[name])){
             resolutions.push(
                 resolveProp(
-                    resolveArray(object[name], APromise, visited), name
+                    resolveArray(object[name], the), name
                 )
             );
         }else if(typeof object[name] === 'object'){
 
-            for(var i=0; i<visited.length; i++){
-                if(visited[i] === object[name]){
+            for(var i=0; i<the.visited.length; i++){
+                if(the.visited[i] === object[name]){
                     return;
                 }
             }
 
-            visited.push(object[name]);
+            the.visited.push(object[name]);
 
             resolutions.push(
                 resolveChild(object[name], name)
@@ -106,7 +124,7 @@ function resolveProperties(object, Promise, visited){
     });
 
     function resolveChild(obj, name){
-        return resolveObject(obj, Promise, visited).then(function (value){
+        return resolveObject(obj, the).then(function (value){
             return {
                 name: name,
                 value: value
@@ -114,7 +132,7 @@ function resolveProperties(object, Promise, visited){
         });
     }
 
-    return Promise.all(resolutions)
+    return the.Promise.all(resolutions)
     .then(function (values){
 
         for(var i=0; i<values.length; i++){
@@ -137,37 +155,48 @@ function resolveProp(p, name){
     });
 }
 
-function resolveAll(value, Promise, visited){
+function resolveAll(value, the){
 
     var type = typeof value;
 
     if(type === 'undefined'){
-        return Promise.reject(new TypeError('undefined value'));
+        return the.Promise.reject(new TypeError('undefined value'));
     }
 
     if(isThenable(value)){
-        return value.then(function (v){ return resolveAll(v, Promise, visited); });
+        return value.then(function (v){ return resolveAll(v, the); });
     }
 
     if(isNormalValue(value)){
-        return Promise.resolve(value);
+        return the.Promise.resolve(value);
     }
 
     if(isArray(value)){
-        return resolveArray(value, Promise, visited);
+        return resolveArray(value, the);
     }
 
-    return resolveObject(value, Promise, visited);
+    return resolveObject(value, the);
 }
 
 function superResolve(value, P){
+    
+    if(typeof P === 'undefined'){
+        if(superResolve.Promise !== null){
+            P = superResolve.Promise;
+        }else{
+            P = Promise;
+        }
+    }
+
     return resolveAll(
         value,
-        P || superResolve.promise || Promise,
-        []
+        {
+            Promise: P,
+            visited: []
+        }
     );
 }
 
-superResolve.promise = null;
+superResolve.Promise = null;
 
 export default superResolve;
