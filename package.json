@@ -1,7 +1,7 @@
 {
   "name": "super-resolve",
   "version": "1.0.0",
-  "description": "Resolve an entire object",
+  "description": "Resolve (to Promise) an entire object, or any value",
   "main": "dist/bundle.js",
   "jsnext:main": "dist/bundle.es.js",
   "directories": {
@@ -26,5 +26,13 @@
     "array-map": "0.0.0",
     "is-array": "^1.0.1",
     "object-keys": "^1.0.11"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hollowdoor/super_resolve.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hollowdoor/super_resolve/issues"
+  },
+  "homepage": "https://github.com/hollowdoor/super_resolve#readme"
 }
